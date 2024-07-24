@@ -1,0 +1,14 @@
+{
+  "name": "stream-seg-recorder",
+  "version": "0.0.1",
+  "description": "A simple package for stream segment recording.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "vue": "^3.4.31",
+    "wavefile": "^11.0.0"
+  }
+}
