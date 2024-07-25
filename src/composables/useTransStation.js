@@ -17,7 +17,7 @@ export const useTransStation = () => {
   }
 
   const updateTransList = () => {
-    const lastTrans = transList.value[transList.value.length - 1];
+    let lastTrans = transList.value[transList.value.length - 1];
     if (newParagraph.value) {
       transList.value.push(transItem.value);
       newParagraph.value = false;
