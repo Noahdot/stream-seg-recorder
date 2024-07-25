@@ -1,8 +1,11 @@
 import { ref, nextTick } from 'vue';
-import { useAudioContext } from './composables/useAudioContext';
 import { convertToWav, debounce, calcAverage } from './utils';
 import Recorder from './classes/recorder';
 import { useTransStation } from './composables/useTransStation';
+
+const { newParagraph, push, transList, bindStt } = useTransStation();
+const lastSentence = ref(false);
+const isConnecting = ref(false);
 
 export const useStreamSegRecorder = async (stream) => {
   if (!stream) {
@@ -12,59 +15,37 @@ export const useStreamSegRecorder = async (stream) => {
       throw new Error('getUserMedia is not supported');
     }
   }
-
-  // 需要使用者提供的
-  // stream, google stt function(這個要怎麼提供比較好啊？)
-  // debounce second
-
-  // 先用使用者提供的 stream 來做 init
-  // 建立 audioContext, streamSource, analyser, mediaRecorder
-
-  // 要自己寫的 recorder class(可以用composition api嗎？), covertToWav, useTransSation, calcAverage, debounce
-
-  // recordedAudioBase64
-
-  // 可以取得 wav base64 陣列
-  // 也可以提供呼叫 google stt 的方法，如果有的話我會 watch 待發陣列，幫你呼叫 stt，然後將返回的字串放進另一個存放 stt 字串的陣列
-  const debounceSentenceMs = ref(900);
-  const debounceParagraphMs = ref(3000);
-  const speechToText = ref(null);
-
   const audioContext = new (window.AudioContext || window.webkitAudioContext)();
   const source = audioContext.createMediaStreamSource(stream);
   const analyser = audioContext.createAnalyser();
-
   const setupRecorder = () => {
     Recorder.ins = new MediaRecorder(stream);
     Recorder.ins.ondataavailable = e => Recorder.chunks.push(e.data);
     Recorder.ins.onstop = () => {
+      if (lastSentence.value === true) return;
       convertToWav(Recorder.chunks[0]).then(base64Url => push(base64Url));
     }
   }
-
   setupRecorder();
 
-  // const { source, analyser } = useAudioContext(stream);
-  // const { recorderIns, recorderStart, recorderStop, recorderStatus } = useRecorder(stream);
-
-  // const init = (stream, { debounceSentenceMs = 900, debounceParagraphMs = 3000 } = {}) => {
-  //   debounceSentenceMs.value = debounceSentenceMs;
-  //   debounceParagraphMs.value = debounceParagraphMs;
-  // }
+  // options setup
+  const debounceSentenceMs = ref(900);
+  const debounceParagraphMs = ref(3000);
+  const speechToText = ref(null);
 
   const setupOptions = ({
     debounceSentenceMs = 900,
     debounceParagraphMs = 3000,
     speechToText = null
   } = {}) => {
-    debounceSentenceMs.value = debounceSentenceMs; // 轉數字
-    debounceParagraphMs.value = debounceParagraphMs; // 轉數字
-    speechToText.value = speechToText; // 確保是 function
+    debounceSentenceMs.value = Number(debounceSentenceMs);
+    debounceParagraphMs.value = Number(debounceParagraphMs);
+    speechToText.value = typeof speechToText === 'function'? speechToText: null;
+    if (speechToText.value) bindStt(speechToText.value);
   }
 
-  const run = () => {
-    // connect 前要先確保沒有連接？ disconnect 前要確保有連接？
-    source.connect(analyser);
+  const recordingStart = () => {
+    connect();
 
     const timeDomainData = new Uint8Array(analyser.fftSize);
     const sampleCount = 10;
@@ -76,7 +57,8 @@ export const useStreamSegRecorder = async (stream) => {
     }, debounceSentenceMs.value);
 
     const debounceParagraph = debounce(() => {
-
+      lastSentence.value = true;
+      Recorder.stop();
     }, debounceParagraphMs.value);
 
     const update = () => {
@@ -88,6 +70,7 @@ export const useStreamSegRecorder = async (stream) => {
           debounceParagraph();
         } else {
           Recorder.start();
+          newParagraph.value = true;
         }
       }
 
@@ -97,15 +80,26 @@ export const useStreamSegRecorder = async (stream) => {
     requestAnimationFrame(update);
   }
 
-  const stop = () => {
+  const recordingStop = () => {
+    disconnect();
+  }
 
+  const connect = () => {
+    source.connect(analyser);
+    isConnecting.value = true;
+  }
+
+  const disconnect = () => {
+    if (isConnecting.value) {
+      source.disconnect(analyser);
+      isConnecting.value = false;
+    }
   }
 
   return {
-    // init,
     setupOptions,
-    run,
-    stop,
-
+    recordingStart,
+    recordingStop,
+    transList
   }
 }
