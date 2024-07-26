@@ -7,14 +7,9 @@ const { newParagraph, push, transList, bindStt } = useTransStation();
 const lastSentence = ref(false);
 const isConnecting = ref(false);
 
-export const useStreamSegRecorder = async (stream) => {
-  if (!stream) {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } else {
-      throw new Error('getUserMedia is not supported');
-    }
-  }
+export const useStreamSegRecorder = (stream) => {
+  if (!stream) throw new Error('stream is required!');
+
   const audioContext = new (window.AudioContext || window.webkitAudioContext)();
   const source = audioContext.createMediaStreamSource(stream);
   const analyser = audioContext.createAnalyser();
@@ -29,22 +24,23 @@ export const useStreamSegRecorder = async (stream) => {
   setupRecorder();
 
   // options setup
-  const debounceSentenceMs = ref(900);
-  const debounceParagraphMs = ref(3000);
-  const speechToText = ref(null);
+  const sentenceMs = ref(900);
+  const paragraphMs = ref(3000);
+  const sttFunc = ref(null);
 
   const setupOptions = ({
     debounceSentenceMs = 900,
     debounceParagraphMs = 3000,
     speechToText = null
   } = {}) => {
-    debounceSentenceMs.value = Number(debounceSentenceMs);
-    debounceParagraphMs.value = Number(debounceParagraphMs);
-    speechToText.value = typeof speechToText === 'function'? speechToText: null;
-    if (speechToText.value) bindStt(speechToText.value);
+    sentenceMs.value = Number(debounceSentenceMs);
+    paragraphMs.value = Number(debounceParagraphMs);
+    sttFunc.value = typeof speechToText === 'function'? speechToText: null;
+    if (sttFunc.value) bindStt(sttFunc.value);
   }
 
   const recordingStart = () => {
+    if (isConnecting.value) return;
     connect();
 
     const timeDomainData = new Uint8Array(analyser.fftSize);
@@ -54,12 +50,12 @@ export const useStreamSegRecorder = async (stream) => {
     const debounceSentence = debounce(() => {
       Recorder.stop();
       nextTick(() => Recorder.start());
-    }, debounceSentenceMs.value);
+    }, sentenceMs.value);
 
     const debounceParagraph = debounce(() => {
       lastSentence.value = true;
       Recorder.stop();
-    }, debounceParagraphMs.value);
+    }, paragraphMs.value);
 
     const update = () => {
       analyser.getByteTimeDomainData(timeDomainData);
@@ -71,6 +67,7 @@ export const useStreamSegRecorder = async (stream) => {
         } else {
           Recorder.start();
           newParagraph.value = true;
+          lastSentence.value = false;
         }
       }
 

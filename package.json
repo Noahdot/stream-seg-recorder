@@ -1,6 +1,6 @@
 {
   "name": "stream-seg-recorder",
-  "version": "0.0.4",
+  "version": "0.0.1",
   "description": "A simple package for stream segment recording.",
   "main": "src/index.js",
   "type": "module",

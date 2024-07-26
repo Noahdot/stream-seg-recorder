@@ -17,12 +17,11 @@ export const useTransStation = () => {
   }
 
   const updateTransList = () => {
-    let lastTrans = transList.value[transList.value.length - 1];
     if (newParagraph.value) {
       transList.value.push(transItem.value);
       newParagraph.value = false;
     } else {
-      lastTrans = transItem.value;
+      transList.value[transList.value.length - 1] = transItem.value;
     }
   }
 
