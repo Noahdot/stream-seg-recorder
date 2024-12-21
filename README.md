@@ -159,14 +159,14 @@ app.post('/api/google/stt', upload.any(), async (req, res) => {
 #### useStreamSegRecorder(stream)
 
 Parameters
-- \`stream\`: The audio stream obtained from the user's microphone or other audio source.
+- `stream`: The audio stream obtained from the user's microphone or other audio source.
 
 Returns
-- \`setupOptions(options)\`: Configures the recorder settings.
-  - \`debounceSentenceMs\`: Number of milliseconds of silence to consider as the end of a sentence.
-  - \`debounceParagraphMs\`: Number of milliseconds of silence to consider as the end of a paragraph.
-  - \`speechToText\`: A function that takes base64 encoded audio and returns a transcription.
-- \`recordingStart()\`: Starts the recording process.
-- \`recordingStop()\`: Stops the recording process.
-- \`transList\`: A reactive list of transcribed text segments.
+- `setupOptions(options)`: Configures the recorder settings.
+  - `debounceSentenceMs`: Number of milliseconds of silence to consider as the end of a sentence.
+  - `debounceParagraphMs`: Number of milliseconds of silence to consider as the end of a paragraph.
+  - `speechToText`: A function that takes base64 encoded audio and returns a transcription.
+- `recordingStart()`: Starts the recording process.
+- `recordingStop()`: Stops the recording process.
+- `transList`: A reactive list of transcribed text segments.
 
